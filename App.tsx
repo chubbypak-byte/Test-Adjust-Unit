@@ -11,16 +11,22 @@ import {
   FileText, 
   ArrowRight,
   Cpu,
-  BarChart3
+  BarChart3,
+  Save,
+  Database
 } from 'lucide-react';
 import { parseExcel } from './utils/excelParser';
 import { analyzeMeterData } from './services/geminiService';
 import { AnalysisResult } from './types';
+import { supabase } from './services/supabaseClient';
 
 const App: React.FC = () => {
   // State Inputs
   const [elecFile, setElecFile] = useState<File | null>(null);
   const [prodFile, setProdFile] = useState<File | null>(null);
+  const [elecData, setElecData] = useState<any[]>([]);
+  const [prodData, setProdData] = useState<any[]>([]);
+  
   const [cause, setCause] = useState('');
   const [discoveryDate, setDiscoveryDate] = useState('');
   const [fixDate, setFixDate] = useState('');
@@ -30,11 +36,27 @@ const App: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  
+  // Saving State
+  const [saving, setSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'elec' | 'prod') => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'elec' | 'prod') => {
     if (e.target.files && e.target.files[0]) {
-      if (type === 'elec') setElecFile(e.target.files[0]);
-      else setProdFile(e.target.files[0]);
+      const file = e.target.files[0];
+      try {
+        const parsedData = await parseExcel(file);
+        if (type === 'elec') {
+          setElecFile(file);
+          setElecData(parsedData);
+        } else {
+          setProdFile(file);
+          setProdData(parsedData);
+        }
+      } catch (err) {
+        console.error("Error parsing file:", err);
+        setError("ไม่สามารถอ่านไฟล์ได้ กรุณาตรวจสอบรูปแบบไฟล์");
+      }
     }
   };
 
@@ -46,11 +68,10 @@ const App: React.FC = () => {
     setError(null);
     setLoading(true);
     setResult(null);
+    setSaveSuccess(false);
 
     try {
-      const elecData = await parseExcel(elecFile);
-      const prodData = await parseExcel(prodFile);
-      
+      // Note: We already parsed data in handleFileChange, but ensuring it's passed correctly
       const analysis = await analyzeMeterData({
         cause,
         discoveryDate,
@@ -65,6 +86,40 @@ const App: React.FC = () => {
       setError(err.message || "เกิดข้อผิดพลาดในการวิเคราะห์");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveToSupabase = async () => {
+    if (!result) return;
+    setSaving(true);
+    setError(null);
+
+    try {
+      const { error } = await supabase
+        .from('analysis_logs')
+        .insert({
+          cause: cause,
+          discovery_date: discoveryDate || null,
+          fix_date: fixDate || null,
+          additional_info: additionalInfo,
+          electricity_data: elecData, // Save full parsed JSON
+          production_data: prodData,  // Save full parsed JSON
+          failure_start_month: result.failureStartMonth,
+          confidence_score: result.confidenceScore,
+          reasoning: result.reasoning,
+          anomaly_type: result.anomalyType,
+          summary: result.summary
+        });
+
+      if (error) throw error;
+
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 5000); // Hide success msg after 5s
+    } catch (err: any) {
+      console.error("Database Error:", err);
+      setError("บันทึกข้อมูลล้มเหลว: " + err.message);
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -268,17 +323,40 @@ const App: React.FC = () => {
               <div className="space-y-6 animate-fade-in-up">
                 
                 {/* Header Card */}
-                <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+                <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full -mr-20 -mt-20 opacity-50 blur-3xl pointer-events-none"></div>
                   
                   <div className="relative z-10">
-                    <div className="flex items-center gap-2 mb-6">
-                      <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wide border border-green-200">
-                        Analysis Complete
-                      </span>
-                      <span className="text-slate-400 text-xs">
-                        • {new Date().toLocaleDateString('th-TH')}
-                      </span>
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wide border border-green-200">
+                          Analysis Complete
+                        </span>
+                        <span className="text-slate-400 text-xs">
+                          • {new Date().toLocaleDateString('th-TH')}
+                        </span>
+                      </div>
+                      
+                      {/* Save Button */}
+                      <button 
+                        onClick={handleSaveToSupabase}
+                        disabled={saving || saveSuccess}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wide transition-all
+                          ${saveSuccess 
+                            ? 'bg-green-100 text-green-700 border border-green-200' 
+                            : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-100'
+                          }
+                        `}
+                      >
+                        {saving ? (
+                          <span className="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></span>
+                        ) : saveSuccess ? (
+                          <CheckCircle2 className="w-4 h-4" />
+                        ) : (
+                          <Save className="w-4 h-4" />
+                        )}
+                        {saveSuccess ? 'บันทึกแล้ว' : 'บันทึกข้อมูล'}
+                      </button>
                     </div>
 
                     <div className="text-center py-4">
@@ -328,6 +406,9 @@ const App: React.FC = () => {
 
                 {/* Footer Info */}
                 <div className="flex justify-end items-center gap-2 text-sm text-slate-400 mt-8">
+                  <Database className="w-4 h-4 text-slate-300" />
+                  <span>Stored in Supabase</span>
+                  <span className="mx-2 text-slate-300">|</span>
                   <span>รูปแบบความผิดปกติ:</span>
                   <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded text-xs font-medium font-inter">
                     {result.anomalyType}
