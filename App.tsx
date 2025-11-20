@@ -1,5 +1,18 @@
 import React, { useState } from 'react';
-import { Upload, FileSpreadsheet, Activity, AlertCircle, CheckCircle, Calendar, Search, Zap } from 'lucide-react';
+import { 
+  Upload, 
+  FileSpreadsheet, 
+  Activity, 
+  AlertCircle, 
+  CheckCircle2, 
+  Search, 
+  Zap, 
+  Calendar, 
+  FileText, 
+  ArrowRight,
+  Cpu,
+  BarChart3
+} from 'lucide-react';
 import { parseExcel } from './utils/excelParser';
 import { analyzeMeterData } from './services/geminiService';
 import { AnalysisResult } from './types';
@@ -27,11 +40,12 @@ const App: React.FC = () => {
 
   const handleAnalyze = async () => {
     if (!elecFile || !prodFile || !cause || !discoveryDate) {
-      setError("กรุณากรอกข้อมูลและอัปโหลดไฟล์ให้ครบถ้วน");
+      setError("กรุณากรอกข้อมูลจำเป็น (*) ให้ครบถ้วน");
       return;
     }
     setError(null);
     setLoading(true);
+    setResult(null);
 
     try {
       const elecData = await parseExcel(elecFile);
@@ -55,72 +69,95 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 font-sarabun">
-      {/* Header */}
-      <header className="bg-gradient-to-r from-slate-900 to-slate-800 shadow-lg sticky top-0 z-10 text-white">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <div className="bg-blue-500 p-2 rounded-lg shadow-lg shadow-blue-500/30">
-              <Zap className="text-white w-6 h-6" />
+    <div className="min-h-screen bg-slate-50 text-slate-800 font-sarabun pb-12">
+      
+      {/* Minimal Modern Header */}
+      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-indigo-600 p-2 rounded-xl shadow-indigo-200 shadow-lg">
+              <Cpu className="text-white w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight">Meter Detective AI <span className="text-blue-400 text-sm font-normal ml-2">Powered by Gemini 3.0</span></h1>
-              <p className="text-xs text-slate-300">ระบบวิเคราะห์ความผิดปกติมิเตอร์ไฟฟ้าสำหรับผู้เชี่ยวชาญ</p>
+              <h1 className="text-lg font-bold text-slate-900 tracking-tight leading-none">Meter Detective</h1>
+              <p className="text-[10px] font-medium text-slate-500 uppercase tracking-wider mt-0.5">AI Statistical Analysis</p>
             </div>
           </div>
+          <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 rounded-full border border-slate-200">
+            <Zap className="w-3 h-3 text-amber-500 fill-amber-500" />
+            <span className="text-xs font-semibold text-slate-600 font-inter">Gemini 3.0 Pro</span>
+          </div>
         </div>
-      </header>
+      </nav>
 
-      <main className="max-w-7xl mx-auto px-4 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           
-          {/* Left Column: Inputs */}
+          {/* LEFT PANEL: INPUT CONTROLS */}
           <div className="lg:col-span-5 space-y-6">
             
-            {/* Data Upload Section */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-              <h2 className="text-lg font-semibold mb-4 flex items-center text-slate-800">
-                <FileSpreadsheet className="w-5 h-5 mr-2 text-blue-600" />
-                นำเข้าข้อมูล (Excel)
-              </h2>
+            {/* Section 1: Data Source */}
+            <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">1</div>
+                <h2 className="font-semibold text-slate-800">ข้อมูลดิบ (Excel)</h2>
+              </div>
               
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">1. ไฟล์สถิติการใช้ไฟฟ้า</label>
+              <div className="space-y-3">
+                {/* Elec File */}
+                <div className="group">
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5 ml-1">สถิติการใช้ไฟฟ้า *</label>
                   <div className="relative">
-                    <input type="file" accept=".xlsx, .xls" onChange={(e) => handleFileChange(e, 'elec')} className="hidden" id="elec-file" />
-                    <label htmlFor="elec-file" className={`flex items-center justify-center w-full p-3 border-2 border-dashed rounded-lg cursor-pointer transition-all ${elecFile ? 'border-green-500 bg-green-50 text-green-700' : 'border-slate-300 hover:border-blue-400 hover:bg-blue-50 text-slate-500'}`}>
-                      {elecFile ? <span className="flex items-center"><CheckCircle className="w-4 h-4 mr-2"/> {elecFile.name}</span> : <span className="flex items-center"><Upload className="w-4 h-4 mr-2"/> อัปโหลดไฟล์</span>}
-                    </label>
+                    <input type="file" accept=".xlsx, .xls" onChange={(e) => handleFileChange(e, 'elec')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                    <div className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${elecFile ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200 group-hover:border-indigo-300 group-hover:bg-indigo-50/50'}`}>
+                      <div className="flex items-center gap-3 overflow-hidden">
+                        <div className={`p-2 rounded-lg ${elecFile ? 'bg-green-100 text-green-600' : 'bg-white text-slate-400 shadow-sm'}`}>
+                          <FileSpreadsheet className="w-5 h-5" />
+                        </div>
+                        <span className={`text-sm truncate font-medium ${elecFile ? 'text-green-800' : 'text-slate-500'}`}>
+                          {elecFile ? elecFile.name : 'คลิกเพื่อเลือกไฟล์'}
+                        </span>
+                      </div>
+                      {elecFile && <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />}
+                    </div>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">2. ข้อมูลผลผลิต</label>
+                {/* Prod File */}
+                <div className="group">
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5 ml-1">ข้อมูลผลผลิต *</label>
                   <div className="relative">
-                    <input type="file" accept=".xlsx, .xls" onChange={(e) => handleFileChange(e, 'prod')} className="hidden" id="prod-file" />
-                    <label htmlFor="prod-file" className={`flex items-center justify-center w-full p-3 border-2 border-dashed rounded-lg cursor-pointer transition-all ${prodFile ? 'border-green-500 bg-green-50 text-green-700' : 'border-slate-300 hover:border-blue-400 hover:bg-blue-50 text-slate-500'}`}>
-                       {prodFile ? <span className="flex items-center"><CheckCircle className="w-4 h-4 mr-2"/> {prodFile.name}</span> : <span className="flex items-center"><Upload className="w-4 h-4 mr-2"/> อัปโหลดไฟล์</span>}
-                    </label>
+                    <input type="file" accept=".xlsx, .xls" onChange={(e) => handleFileChange(e, 'prod')} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" />
+                    <div className={`flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 ${prodFile ? 'bg-green-50 border-green-200' : 'bg-slate-50 border-slate-200 group-hover:border-indigo-300 group-hover:bg-indigo-50/50'}`}>
+                       <div className="flex items-center gap-3 overflow-hidden">
+                        <div className={`p-2 rounded-lg ${prodFile ? 'bg-green-100 text-green-600' : 'bg-white text-slate-400 shadow-sm'}`}>
+                          <BarChart3 className="w-5 h-5" />
+                        </div>
+                        <span className={`text-sm truncate font-medium ${prodFile ? 'text-green-800' : 'text-slate-500'}`}>
+                          {prodFile ? prodFile.name : 'คลิกเพื่อเลือกไฟล์'}
+                        </span>
+                      </div>
+                      {prodFile && <CheckCircle2 className="w-5 h-5 text-green-500 flex-shrink-0" />}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            </section>
 
-            {/* Case Details Form */}
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-shadow">
-              <h2 className="text-lg font-semibold mb-4 flex items-center text-slate-800">
-                <Search className="w-5 h-5 mr-2 text-blue-600" />
-                พารามิเตอร์การวิเคราะห์
-              </h2>
-              
+            {/* Section 2: Context */}
+            <section className="bg-white rounded-2xl p-6 shadow-sm border border-slate-200">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600 font-bold text-sm">2</div>
+                <h2 className="font-semibold text-slate-800">ข้อมูลประกอบการวิเคราะห์</h2>
+              </div>
+
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">สาเหตุการชำรุด</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5 ml-1">สาเหตุการชำรุด *</label>
                   <input 
                     type="text"
-                    className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none text-sm" 
-                    placeholder="เช่น เฟืองไม่หมุน, ขดลวดไหม้, หน้าจอไม่ติด"
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-sm transition-all" 
+                    placeholder="ระบุอาการ เช่น เฟืองรูด, หน้าจอดับ..."
                     value={cause}
                     onChange={(e) => setCause(e.target.value)}
                   />
@@ -128,140 +165,178 @@ const App: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">วันที่ตรวจพบ</label>
-                    <input 
-                      type="date" 
-                      className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                      value={discoveryDate}
-                      onChange={(e) => setDiscoveryDate(e.target.value)}
-                    />
+                    <label className="block text-xs font-medium text-slate-500 mb-1.5 ml-1">วันที่ตรวจพบ *</label>
+                    <div className="relative">
+                      <input 
+                        type="date" 
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-slate-600"
+                        value={discoveryDate}
+                        onChange={(e) => setDiscoveryDate(e.target.value)}
+                      />
+                      <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 mb-1">วันที่แก้ไขเสร็จ</label>
-                    <input 
-                      type="date" 
-                      className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
-                      value={fixDate}
-                      onChange={(e) => setFixDate(e.target.value)}
-                    />
+                    <label className="block text-xs font-medium text-slate-500 mb-1.5 ml-1">วันที่แก้ไขเสร็จ</label>
+                    <div className="relative">
+                      <input 
+                        type="date" 
+                        className="w-full pl-10 pr-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm text-slate-600"
+                        value={fixDate}
+                        onChange={(e) => setFixDate(e.target.value)}
+                      />
+                       <CheckCircle2 className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
+                    </div>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">ข้อมูลเพิ่มเติม</label>
+                  <label className="block text-xs font-medium text-slate-500 mb-1.5 ml-1">ข้อมูลเพิ่มเติม (Optional)</label>
                   <textarea 
-                    className="w-full p-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm" 
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-sm transition-all resize-none" 
                     rows={3}
-                    placeholder="เช่น สภาพแวดล้อม, การเปลี่ยนแปลงเครื่องจักร..."
+                    placeholder="รายละเอียดสภาพแวดล้อม หรือข้อสังเกตอื่นๆ..."
                     value={additionalInfo}
                     onChange={(e) => setAdditionalInfo(e.target.value)}
                   />
                 </div>
-
-                <button 
-                  onClick={handleAnalyze}
-                  disabled={loading}
-                  className={`w-full mt-2 py-3.5 px-4 rounded-lg text-white font-semibold flex items-center justify-center shadow-lg transition-all transform active:scale-95
-                    ${loading ? 'bg-slate-400 cursor-not-allowed shadow-none' : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-blue-500/30'}
-                  `}
-                >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
-                      กำลังวิเคราะห์ข้อมูลด้วย AI...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="w-5 h-5 mr-2 fill-current" />
-                      เริ่มการวิเคราะห์
-                    </>
-                  )}
-                </button>
-
-                {error && (
-                  <div className="p-4 bg-red-50 border border-red-100 text-red-700 text-sm rounded-lg flex items-start animate-pulse">
-                    <AlertCircle className="w-5 h-5 mr-2 mt-0.5 flex-shrink-0" />
-                    {error}
-                  </div>
-                )}
               </div>
-            </div>
+            </section>
+
+            {/* Action Button */}
+            <button 
+              onClick={handleAnalyze}
+              disabled={loading}
+              className={`w-full py-4 px-6 rounded-xl font-semibold text-white shadow-lg flex items-center justify-center gap-2 transition-all transform active:scale-[0.98]
+                ${loading 
+                  ? 'bg-slate-800 cursor-not-allowed opacity-80' 
+                  : 'bg-slate-900 hover:bg-slate-800 hover:shadow-xl ring-4 ring-slate-100'
+                }
+              `}
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>กำลังประมวลผลด้วย AI...</span>
+                </>
+              ) : (
+                <>
+                  <Search className="w-5 h-5" />
+                  <span>เริ่มการวิเคราะห์</span>
+                </>
+              )}
+            </button>
+
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-100 text-red-600 text-sm rounded-xl flex gap-3 animate-pulse">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                <p>{error}</p>
+              </div>
+            )}
           </div>
 
-          {/* Right Column: Results */}
-          <div className="lg:col-span-7 space-y-6">
+          {/* RIGHT PANEL: OUTPUT */}
+          <div className="lg:col-span-7 min-h-[500px]">
             
-            {/* Welcome / Empty State */}
             {!result && !loading && (
-              <div className="h-full flex flex-col items-center justify-center bg-white rounded-xl border border-dashed border-slate-300 p-12 text-center text-slate-500">
-                <div className="bg-blue-50 p-4 rounded-full mb-4">
-                  <Activity className="w-12 h-12 text-blue-400" />
+              <div className="h-full flex flex-col items-center justify-center p-12 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50 text-center">
+                <div className="w-20 h-20 bg-white rounded-2xl shadow-sm flex items-center justify-center mb-6">
+                  <Activity className="w-10 h-10 text-slate-300" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-700">พร้อมสำหรับการวิเคราะห์</h3>
-                <p className="max-w-md mt-2 text-sm">
-                  กรุณาอัปโหลดไฟล์ Excel ข้อมูลการใช้ไฟฟ้าและผลผลิต จากนั้นระบุรายละเอียดความผิดปกติ เพื่อให้ AI ประมวลผลหาระยะเวลาที่เริ่มชำรุด
+                <h3 className="text-xl font-semibold text-slate-700 mb-2">ยังไม่มีผลการวิเคราะห์</h3>
+                <p className="text-slate-500 max-w-xs mx-auto leading-relaxed">
+                  กรุณาอัปโหลดไฟล์และกรอกข้อมูลทางด้านซ้าย เพื่อให้ AI เริ่มทำการวิเคราะห์
                 </p>
               </div>
             )}
 
-            {/* Analysis Result Section */}
-            {result && (
-              <div className="bg-white rounded-xl shadow-xl border border-slate-200 overflow-hidden animate-fade-in-up">
-                <div className="bg-slate-900 px-6 py-5 border-b border-slate-800 flex justify-between items-center">
-                  <h2 className="text-white font-bold text-xl flex items-center">
-                    <Activity className="w-6 h-6 mr-3 text-green-400" />
-                    ผลการวิเคราะห์
-                  </h2>
-                  <span className="bg-slate-700 text-slate-300 text-xs px-3 py-1 rounded-full border border-slate-600">
-                    AI Confidence: {result.confidenceScore}%
-                  </span>
-                </div>
-                
-                <div className="p-8">
-                  
-                  {/* Primary Answer */}
-                  <div className="mb-8 text-center">
-                    <p className="text-slate-500 font-medium text-sm uppercase tracking-widest mb-2">มิเตอร์เริ่มชำรุด/ผิดปกติตั้งแต่</p>
-                    <div className="inline-block bg-red-50 border-2 border-red-100 px-8 py-4 rounded-2xl">
-                      <p className="text-4xl font-extrabold text-red-600">
-                        {result.failureStartMonth}
-                      </p>
+            {loading && (
+              <div className="h-full flex flex-col items-center justify-center p-12 bg-white rounded-3xl border border-slate-100 shadow-sm">
+                 <div className="relative w-24 h-24 mb-8">
+                    <div className="absolute inset-0 border-4 border-indigo-100 rounded-full"></div>
+                    <div className="absolute inset-0 border-4 border-indigo-600 rounded-full border-t-transparent animate-spin"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Cpu className="w-8 h-8 text-indigo-600 animate-pulse" />
                     </div>
-                    <p className="mt-4 text-slate-600 italic">"{result.summary}"</p>
-                  </div>
-
-                  <div className="border-t border-slate-100 my-6"></div>
-
-                  {/* Reasoning Bullet Points */}
-                  <div>
-                    <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center">
-                      <Search className="w-5 h-5 mr-2 text-blue-600" />
-                      เหตุผลประกอบการวิเคราะห์
-                    </h3>
-                    <div className="space-y-4">
-                      {result.reasoning.map((point, index) => (
-                        <div key={index} className="flex items-start bg-slate-50 p-4 rounded-lg border border-slate-100 hover:border-blue-200 transition-colors">
-                          <div className="flex-shrink-0 w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold mr-4 shadow-md shadow-blue-200">
-                            {index + 1}
-                          </div>
-                          <p className="text-slate-700 text-base leading-relaxed mt-0.5">{point}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Anomaly Type Badge */}
-                  <div className="mt-8 flex justify-end">
-                    <div className="flex items-center text-sm text-slate-400 bg-slate-50 px-4 py-2 rounded-full">
-                      <span>รูปแบบความผิดปกติ:</span>
-                      <span className="ml-2 font-semibold text-slate-700">{result.anomalyType}</span>
-                    </div>
-                  </div>
-
-                </div>
+                 </div>
+                 <h3 className="text-lg font-semibold text-slate-800">AI กำลังคิดวิเคราะห์...</h3>
+                 <p className="text-slate-500 text-sm mt-2">กำลังตรวจสอบความสัมพันธ์ระหว่างการใช้ไฟฟ้าและผลผลิต</p>
               </div>
             )}
-            
+
+            {result && (
+              <div className="space-y-6 animate-fade-in-up">
+                
+                {/* Header Card */}
+                <div className="bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border border-slate-100 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50 rounded-full -mr-20 -mt-20 opacity-50 blur-3xl pointer-events-none"></div>
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-2 mb-6">
+                      <span className="px-3 py-1 rounded-full bg-green-100 text-green-700 text-xs font-bold uppercase tracking-wide border border-green-200">
+                        Analysis Complete
+                      </span>
+                      <span className="text-slate-400 text-xs">
+                        • {new Date().toLocaleDateString('th-TH')}
+                      </span>
+                    </div>
+
+                    <div className="text-center py-4">
+                      <p className="text-slate-500 font-medium mb-2">มิเตอร์เริ่มมีความผิดปกติตั้งแต่</p>
+                      <h2 className="text-5xl md:text-6xl font-extrabold text-slate-900 tracking-tight mb-4 font-inter">
+                        {result.failureStartMonth}
+                      </h2>
+                      <p className="text-lg text-slate-600 font-light italic max-w-2xl mx-auto">
+                        "{result.summary}"
+                      </p>
+                    </div>
+
+                    <div className="mt-8 bg-slate-50 rounded-2xl p-4 border border-slate-100">
+                      <div className="flex justify-between items-end mb-2">
+                        <span className="text-sm font-semibold text-slate-700">ระดับความเชื่อมั่น (AI Confidence)</span>
+                        <span className="text-2xl font-bold text-indigo-600 font-inter">{result.confidenceScore}%</span>
+                      </div>
+                      <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">
+                        <div 
+                          className="bg-indigo-600 h-2.5 rounded-full transition-all duration-1000 ease-out" 
+                          style={{ width: `${result.confidenceScore}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reasoning Cards */}
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-indigo-600" />
+                    เหตุผลประกอบการวิเคราะห์
+                  </h3>
+                  <div className="grid gap-4">
+                    {result.reasoning.map((reason, idx) => (
+                      <div key={idx} className="bg-white p-5 rounded-2xl shadow-sm border border-slate-100 flex gap-4 hover:border-indigo-100 transition-colors">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-xs font-bold">
+                            {idx + 1}
+                          </div>
+                        </div>
+                        <p className="text-slate-700 leading-relaxed">{reason}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Footer Info */}
+                <div className="flex justify-end items-center gap-2 text-sm text-slate-400 mt-8">
+                  <span>รูปแบบความผิดปกติ:</span>
+                  <span className="bg-slate-200 text-slate-600 px-2 py-0.5 rounded text-xs font-medium font-inter">
+                    {result.anomalyType}
+                  </span>
+                </div>
+
+              </div>
+            )}
+
           </div>
         </div>
       </main>
